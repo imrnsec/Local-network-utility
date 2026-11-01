@@ -1,0 +1,16 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Runtime data: user files and metadata must never be committed
+uploads/
+items.json
+folders.json
+*.tmp
+
+# Secrets / editor
+.env
+.vscode/
+.idea/

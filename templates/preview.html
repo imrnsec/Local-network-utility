@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ item.name }} — LAN Share</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0b1020;color:#edf3ff;font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid #26334d;background:#0e1527;position:sticky;top:0;z-index:2}
+.title{flex:1;min-width:0;font-weight:750;overflow-wrap:anywhere}.btn{background:#8b9cff;color:#10162b;border-radius:9px;padding:9px 13px;font-weight:800;font-size:13px;text-decoration:none}.btn.secondary{background:#202c46;color:#edf3ff}.btn.off{opacity:.35;pointer-events:none}
+.stage{display:grid;place-items:center;padding:18px;min-height:calc(100vh - 62px)}
+.stage img{max-width:100%;max-height:calc(100vh - 100px);border-radius:10px;background:#080e1b}
+.stage video{max-width:100%;max-height:calc(100vh - 100px);border-radius:10px;background:#000}.stage audio{width:min(640px,100%)}
+.stage iframe{width:100%;height:calc(100vh - 100px);border:0;border-radius:10px;background:#fff}
+pre{width:min(1000px,100%);white-space:pre-wrap;overflow-wrap:anywhere;background:#080e1b;padding:18px;border-radius:10px;border:1px solid #26334d;font:14px/1.6 ui-monospace,monospace;align-self:start}
+</style></head><body>
+<div class="bar"><a class="btn secondary" href="{{ url_for('browse', folder_id=back) if back else url_for('index') }}">← Back</a>
+<a id="prev" class="btn secondary {{ '' if prev else 'off' }}" href="{{ url_for('preview', item_id=prev.id) if prev else '#' }}">‹ Prev</a>
+<a id="next" class="btn secondary {{ '' if next else 'off' }}" href="{{ url_for('preview', item_id=next.id) if next else '#' }}">Next ›</a>
+<div class="title">{{ item.name }}</div>
+<a class="btn" href="{{ url_for('download', item_id=item.id) }}">Download</a></div>
+<main class="stage">
+{% if kind == 'image' %}<img src="{{ url_for('raw', item_id=item.id) }}" alt="{{ item.name }}">
+{% elif kind == 'video' %}<video controls autoplay playsinline src="{{ url_for('raw', item_id=item.id) }}"></video>
+{% elif kind == 'audio' %}<audio controls autoplay src="{{ url_for('raw', item_id=item.id) }}"></audio>
+{% elif kind == 'pdf' %}<iframe src="{{ url_for('raw', item_id=item.id) }}" title="{{ item.name }}"></iframe>
+{% else %}<pre>{{ text }}</pre>{% endif %}
+</main>
+<script>
+document.addEventListener('keydown',e=>{const a=document.getElementById(e.key==='ArrowLeft'?'prev':e.key==='ArrowRight'?'next':'');if(a&&!a.classList.contains('off'))location=a.href});
+</script>
+</body></html>

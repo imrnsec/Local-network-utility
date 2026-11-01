@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LAN Share — Files & Text</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#131b2e;--line:#26334d;--muted:#9aa9c2;--text:#edf3ff;--accent:#8b9cff;--accent2:#b4c0ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#182445 0,#0b1020 55%);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
+.wrap{max-width:1050px;margin:auto;padding:42px 20px 70px}.eyebrow{color:var(--accent2);font-size:12px;font-weight:800;letter-spacing:.17em;text-transform:uppercase}
+h1{font-size:clamp(32px,5vw,50px);line-height:1.08;letter-spacing:-.04em;margin:12px 0}p{color:var(--muted)}.lead{font-size:17px;max-width:650px;margin-bottom:30px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.panel{background:rgba(19,27,46,.92);border:1px solid var(--line);border-radius:18px;padding:23px;box-shadow:0 16px 50px #0002}.panel h2{font-size:18px;margin:0 0 5px}.sub{font-size:13px;margin:0 0 18px}
+label{display:block;font-size:13px;font-weight:700;margin:12px 0 7px}input[type=text],textarea{width:100%;background:#0b1223;border:1px solid #34425e;color:var(--text);border-radius:10px;padding:12px;font:inherit;outline:none}textarea{min-height:150px;resize:vertical}input[type=file]{width:100%;border:1px dashed #425174;background:#0b1223;border-radius:10px;padding:14px;color:var(--muted)}
+button,.btn{border:0;background:var(--accent);color:#10162b;padding:10px 14px;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}button:hover,.btn:hover{background:var(--accent2)}.secondary{background:#202c46;color:var(--text)}.danger{background:#412333;color:#ffd7df}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.notice{padding:11px 14px;border-radius:10px;margin:15px 0;background:#18392f;color:#b9f6d5}.notice.error{background:#40242b;color:#ffc8cf}
+.files{margin-top:22px}.files-head{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:28px 0 12px}.files-head h2{margin:0;font-size:22px}.count{color:var(--muted);font-size:13px}
+.item{display:flex;align-items:center;gap:14px;padding:15px 0;border-top:1px solid var(--line)}.file-icon{width:44px;height:44px;border:1px solid #34425e;background:#1a2540;border-radius:12px;display:grid;place-items:center;font-weight:900;color:var(--accent2);flex-shrink:0}.meta{min-width:0;flex:1}.name{font-weight:750;overflow-wrap:anywhere}.details{font-size:12px;color:var(--muted)}.preview{font-size:13px;color:#bdc8dc;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:4px}.empty{text-align:center;border:1px dashed #34425e;border-radius:14px;padding:32px;color:var(--muted)}
+.crumbs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px;margin:0 0 22px;color:var(--muted)}.crumbs a{color:var(--accent2);text-decoration:none;font-weight:700}.crumbs a:hover{text-decoration:underline}.crumbs .cur{color:var(--text);font-weight:800}
+select{width:100%;background:#0b1223;border:1px solid #34425e;color:var(--text);border-radius:10px;padding:11px;font:inherit}
+.folders{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:6px}.folder{display:flex;align-items:center;gap:12px;padding:14px;background:rgba(19,27,46,.92);border:1px solid var(--line);border-radius:14px;color:var(--text);text-decoration:none}.folder:hover{border-color:var(--accent)}.folder .ico{font-size:26px}.folder .fname{font-weight:750;overflow-wrap:anywhere}.folder .fcount{font-size:12px;color:var(--muted)}
+.inline{display:flex;gap:8px;align-items:center}.inline input[type=text]{flex:1}.moverow select{width:auto;padding:8px;font-size:12px}.moverow{display:flex;gap:6px;align-items:center}
+.thumb{width:44px;height:44px;object-fit:cover;border-radius:11px;display:block}.file-icon a{display:block;line-height:0}.file-icon{overflow:hidden;font-size:11px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 0}
+footer{margin-top:30px;border-top:1px solid var(--line);padding-top:18px;font-size:12px;color:var(--muted)}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.wrap{padding:28px 14px}.item{align-items:flex-start}.actions{max-width:175px}.actions button,.actions .btn{padding:9px;font-size:12px}}
+</style>
+</head>
+<body><main class="wrap">
+<div class="eyebrow">Local network utility</div><h1>{% if current %}{{ current.name }}{% else %}Share files.<br>Move text instantly.{% endif %}</h1>
+<nav class="crumbs"><a href="{{ url_for('index') }}">🏠 Home</a>{% for c in crumbs %} / {% if loop.last %}<span class="cur">{{ c.name }}</span>{% else %}<a href="{{ url_for('browse', folder_id=c.id) }}">{{ c.name }}</a>{% endif %}{% endfor %}</nav>
+{% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="notice {{ 'error' if category == 'error' else '' }}">{{ message }}</div>{% endfor %}{% endwith %}
+<section class="grid">
+<div class="panel"><h2>Upload files</h2><p class="sub">Select one or more files · up to {{ max_mb }} MB per request</p>
+<form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+<label for="folder-up">Save in folder</label><select id="folder-up" name="folder"><option value="">🏠 Home (no folder)</option>{% for fid, path in options %}<option value="{{ fid }}" {{ 'selected' if current and current.id == fid else '' }}>{{ path }}</option>{% endfor %}</select>
+<label for="files">Choose files</label><input id="files" name="files" type="file" multiple required>
+<div class="actions"><button type="submit">Upload files ↗</button></div>
+</form></div>
+<div class="panel"><h2>Share text</h2><p class="sub">Paste a snippet, command, URL, or note</p>
+<form action="{{ url_for('add_text') }}" method="post">
+<label for="folder-tx">Save in folder</label><select id="folder-tx" name="folder"><option value="">🏠 Home (no folder)</option>{% for fid, path in options %}<option value="{{ fid }}" {{ 'selected' if current and current.id == fid else '' }}>{{ path }}</option>{% endfor %}</select>
+<label for="title">Title (optional)</label><input id="title" name="title" type="text" maxlength="100" placeholder="e.g. Useful command">
+<label for="content">Text content</label><textarea id="content" name="content" placeholder="Paste your text here…" required></textarea>
+<div class="actions"><button type="submit">Save text ↗</button><button type="button" class="secondary" onclick="copyDraft()">Copy input</button></div>
+</form></div>
+</section>
+<section class="files"><div class="files-head"><h2>Folders</h2><span class="count">{{ subfolders|length }} folder(s)</span></div>
+<form class="inline" action="{{ url_for('new_folder') }}" method="post"><input type="hidden" name="parent" value="{{ current.id if current else '' }}"><input type="text" name="name" maxlength="60" placeholder="New folder name{% if current %} inside “{{ current.name }}”{% endif %}" required><button type="submit">+ Create folder</button></form>
+{% if subfolders %}<div class="folders" style="margin-top:14px">{% for f in subfolders %}<a class="folder" href="{{ url_for('browse', folder_id=f.id) }}"><span class="ico">📁</span><span><div class="fname">{{ f.name }}</div><div class="fcount">{{ counts[f.id] }} item(s)</div></span></a>{% endfor %}</div>{% endif %}
+{% if current %}<div class="toolbar"><form class="inline" action="{{ url_for('rename_folder', folder_id=current.id) }}" method="post"><input type="text" name="name" maxlength="60" value="{{ current.name }}" required style="width:200px"><button class="secondary" type="submit">Rename</button></form><form action="{{ url_for('delete_folder', folder_id=current.id) }}" method="post" onsubmit="return confirm('Delete this folder with everything inside it?')"><button class="danger" type="submit">Delete this folder</button></form></div>{% endif %}
+<div class="files-head"><h2>{% if current %}Items in this folder{% else %}Shared items{% endif %}</h2><span class="count">{{ items|length }} item(s)</span></div>
+{% if items %}
+{% for item in items %}
+<div class="item">
+{% set pk = preview_kind(item) %}<div class="file-icon">{% if pk == 'image' %}<a href="{{ url_for('preview', item_id=item.id) }}"><img class="thumb" loading="lazy" src="{{ url_for('raw', item_id=item.id) }}" alt=""></a>{% else %}{{ 'TXT' if item.kind == 'text' else {'video':'VID','audio':'AUD','pdf':'PDF','text':'TXT'}.get(pk, 'FILE') }}{% endif %}</div>
+<div class="meta"><div class="name">{{ item.name }}</div><div class="details">{{ (item.size / 1024)|round(1) }} KB · {{ 'Text' if item.kind == 'text' else 'File' }} · {{ item.created[:16].replace('T',' ') }} UTC</div>
+{% if item.kind == 'text' %}<div class="preview">{{ item.preview }}{% if item.preview|length >= 180 %}…{% endif %}</div>{% endif %}</div>
+<div class="actions">
+{% if item.kind == 'text' %}<a class="btn" href="{{ url_for('view_text', item_id=item.id) }}">Open</a><button type="button" class="secondary" onclick="copyText('{{ url_for('view_text', item_id=item.id, _external=True) }}')">Copy link</button>{% else %}{% if pk %}<a class="btn" href="{{ url_for('preview', item_id=item.id) }}">Open</a><a class="btn secondary" href="{{ url_for('download', item_id=item.id) }}">Download</a>{% else %}<a class="btn" href="{{ url_for('download', item_id=item.id) }}">Download</a>{% endif %}<button type="button" class="secondary" onclick="copyText('{{ url_for('download', item_id=item.id, _external=True) }}')">Copy link</button>{% endif %}
+<form class="moverow" action="{{ url_for('move', item_id=item.id) }}" method="post"><select name="folder" onchange="this.form.submit()" aria-label="Move to folder"><option value="" disabled selected>Move to…</option><option value="">🏠 Home</option>{% for fid, path in options %}{% if not current or current.id != fid %}<option value="{{ fid }}">{{ path }}</option>{% endif %}{% endfor %}</select></form>
+<form action="{{ url_for('delete', item_id=item.id) }}" method="post" onsubmit="return confirm('Delete this item?')"><button class="danger" type="submit">Delete</button></form>
+</div></div>
+{% endfor %}
+{% else %}<div class="empty">Nothing here yet. Upload a file or save a text snippet above.</div>{% endif %}
+</section>
+<footer>LAN Share · Runs on your computer · Files are stored in the local <code>uploads/</code> folder.</footer>
+</main>
+<script>
+async function copyText(text){try{await navigator.clipboard.writeText(text);alert('Copied to clipboard');}catch(e){prompt('Copy this link:',text)}}
+async function copyDraft(){const text=document.querySelector('#content').value;try{await navigator.clipboard.writeText(text);alert('Text copied');}catch(e){document.querySelector('#content').select();document.execCommand('copy')}}
+</script></body></html>
